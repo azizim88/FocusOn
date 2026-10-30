@@ -23,3 +23,6 @@ Student (Bearer-token na `POST /api/student/login` met {nr, deviceId}):
 
 ## Nog te doen voor productie
 Database, https, wachtwoord-hashing, rate limiting, SSO via Canvas (LTI 1.3 / OAuth2), AVG (bewaartermijn, logging).
+
+## Docentdashboard
+Open `http://localhost:3000/` (of het Codespaces-adres) in de browser. Log in als `docent@school.nl` / `focuson`, importeer de klas, start een les, en laat studenten de code of QR scannen. De pagina staat in `public/docent.html`.

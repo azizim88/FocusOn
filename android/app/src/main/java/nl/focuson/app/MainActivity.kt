@@ -90,7 +90,7 @@ fun App() {
             OutlinedTextField(server, { server = it }, label = { Text("Server-adres") }, modifier = Modifier.fillMaxWidth())
             OutlinedTextField(nr, { nr = it }, label = { Text("Studentnummer") }, modifier = Modifier.fillMaxWidth())
             Button(onClick = {
-                val base = server.trim()
+                val base = server.trim().trimEnd('/')
                 Api.base = base
                 val deviceId = Settings.Secure.getString(ctx.contentResolver, Settings.Secure.ANDROID_ID)
                 scope.launch {

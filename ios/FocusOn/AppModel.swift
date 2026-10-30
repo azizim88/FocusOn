@@ -37,7 +37,8 @@ final class AppModel: ObservableObject {
     }
 
     func login() async {
-        let base = server.trimmingCharacters(in: .whitespaces)
+        var base = server.trimmingCharacters(in: .whitespaces)
+        while base.hasSuffix("/") { base.removeLast() }
         API.shared.base = base
         do {
             let r = try await API.shared.call("POST", "/api/student/login",

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FocusOn docent</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1b2430;--mut:#6b7686;--pri:#2457d6;--ok:#1a8a4a;--warn:#c77a00;--bad:#c62828;--bd:#dde3ea}
+@media(prefers-color-scheme:dark){:root{--bg:#12161c;--card:#1b222b;--tx:#e8edf3;--mut:#93a0b0;--pri:#6c93ff;--ok:#4cc27f;--warn:#e8a63a;--bad:#ff6b6b;--bd:#2c3642}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--tx)}
+header{padding:14px 16px;border-bottom:1px solid var(--bd);background:var(--card);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+main{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:16px;max-width:1150px;margin:auto}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,textarea,button{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+textarea{width:100%;min-height:80px;font-family:ui-monospace,monospace;font-size:13px}
+button{cursor:pointer;background:var(--pri);color:#fff;border-color:var(--pri)}
+button.sec{background:var(--card);color:var(--tx);border-color:var(--bd)}
+button.bad{background:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.45;cursor:default}
+.code{font-size:44px;font-weight:700;letter-spacing:6px;font-variant-numeric:tabular-nums}
+.mut{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--bd);font-size:14px}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.t-ok{background:#1a8a4a22;color:var(--ok)}.t-warn{background:#c77a0022;color:var(--warn)}.t-bad{background:#c6282822;color:var(--bad)}.t-mut{background:var(--bd);color:var(--mut)}
+.log{max-height:240px;overflow:auto;font-size:13px}
+.log div{padding:3px 0;border-bottom:1px dashed var(--bd)}
+#qr{background:#fff;padding:10px;border-radius:8px;display:inline-block;line-height:0}
+#qr svg,#qr img{width:200px;height:200px}
+.hide{display:none}
+#err{color:var(--bad);margin:8px 0 0}
+</style>
+</head>
+<body>
+<header><span>FocusOn <span class="mut" style="font-weight:400">docent (live server)</span></span><span><span id="who" class="mut"></span> <button id="out" class="sec hide">Uitloggen</button></span></header>
+<main>
+<section>
+  <div class="card" id="loginCard">
+    <h2>Inloggen</h2>
+    <div class="row">
+      <input id="em" type="email" placeholder="E-mail" value="docent@school.nl">
+      <input id="pw" type="password" placeholder="Wachtwoord" value="focuson">
+      <button id="login">Inloggen</button>
+      <button id="reg" class="sec">Registreren</button>
+    </div>
+  </div>
+
+  <div id="app" class="hide">
+    <div class="card">
+      <h2>1. Klas (CSV: studentnummer;naam)</h2>
+      <textarea id="csvIn">1001;Anna de Vries
+1002;Bram Smit
+1003;Chloe Jansen</textarea>
+      <div class="row" style="margin-top:8px">
+        <input type="file" id="csvFile" accept=".csv,.txt">
+        <button id="imp">Klas importeren</button>
+      </div>
+      <table style="margin-top:10px">
+        <thead><tr><th>In les</th><th>Studentnr</th><th>Naam</th><th>Toestel</th><th></th></tr></thead>
+        <tbody id="roster"><tr><td colspan="5" class="mut">Nog geen klas.</td></tr></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>2. Les</h2>
+      <div class="row" id="startRow">
+        <input id="klas" placeholder="Klas / vak" value="Les">
+        <input id="duur" type="number" min="1" value="90" style="width:90px"> <span class="mut">minuten</span>
+        <button id="start">Les starten</button>
+      </div>
+      <div id="live" class="hide">
+        <div class="row" style="gap:24px;align-items:center">
+          <div>
+            <div class="mut">Code (wisselt over <span id="sec">0</span> s)</div>
+            <div class="code" id="code">------</div>
+          </div>
+          <div id="qr"></div>
+        </div>
+        <div class="row" style="margin-top:10px">
+          <button id="end" class="bad">Les beëindigen</button>
+          <button id="csv" class="sec">Exporteer CSV</button>
+          <span class="mut" id="lesInfo"></span>
+        </div>
+      </div>
+      <div id="err"></div>
+    </div>
+
+    <div class="card">
+      <h2>3. Aanwezigheid</h2>
+      <table>
+        <thead><tr><th>Nr</th><th>Naam</th><th>In</th><th>Uit</th><th>Reden</th><th>Status</th></tr></thead>
+        <tbody id="att"><tr><td colspan="6" class="mut">Geen les.</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+<aside>
+  <div class="card"><h2>Meldingen</h2><div class="log" id="log"><span class="mut">Nog geen meldingen.</span></div></div>
+</aside>
+</main>
+<script src="qrcode.js"></script>
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let token = null, les = null, lastCode = null, lastRoster = 0;
+try { token = sessionStorage.getItem('t'); } catch (e) {}
+
+async function api(method, path, body) {
+  const r = await fetch(path, { method, headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) }, body: body ? JSON.stringify(body) : undefined });
+  const j = await r.json().catch(() => ({}));
+  if (r.status === 401 && token) { logout(); }
+  if (!r.ok) throw new Error(j.error || 'Fout ' + r.status);
+  return j;
+}
+function showErr(m) { $('err').textContent = m || ''; }
+function tm(t) { return t ? new Date(t).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''; }
+function tag(s) { const c = { Aanwezig: 't-ok', 'Te laat': 't-warn', Omzeild: 't-bad', Uitgecheckt: 't-mut', Afwezig: 't-mut', 'Niet in les': 't-mut' }[s] || 't-mut'; return `<span class="tag ${c}">${esc(s)}</span>`; }
+
+function setLoggedIn(on) {
+  $('loginCard').classList.toggle('hide', on); $('app').classList.toggle('hide', !on); $('out').classList.toggle('hide', !on);
+  $('who').textContent = on ? $('em').value : '';
+}
+function logout() { token = null; try { sessionStorage.removeItem('t'); } catch (e) {} setLoggedIn(false); }
+$('out').onclick = logout;
+
+$('login').onclick = async () => {
+  try { const r = await api('POST', '/api/teacher/login', { email: $('em').value, password: $('pw').value }); token = r.token; try { sessionStorage.setItem('t', token); } catch (e) {} showErr(''); setLoggedIn(true); refresh(true); }
+  catch (e) { alert(e.message); }
+};
+$('reg').onclick = async () => { try { await api('POST', '/api/teacher/register', { email: $('em').value, password: $('pw').value }); alert('Account aangemaakt, log nu in.'); } catch (e) { alert(e.message); } };
+
+$('csvFile').onchange = async (e) => { const f = e.target.files[0]; if (f) $('csvIn').value = await f.text(); };
+$('imp').onclick = async () => { try { const r = await api('POST', '/api/roster/import', { csv: $('csvIn').value }); showErr(''); alert(r.aantal + ' studenten geïmporteerd'); loadRoster(); } catch (e) { showErr(e.message); } };
+$('start').onclick = async () => { try { await api('POST', '/api/lessons', { klas: $('klas').value, duur: +$('duur').value }); showErr(''); refresh(true); } catch (e) { showErr(e.message); } };
+$('end').onclick = async () => { if (confirm('Les beëindigen?')) { try { await api('POST', '/api/lessons/end'); refresh(true); } catch (e) { showErr(e.message); } } };
+$('csv').onclick = () => {
+  if (!les) return;
+  const rows = [['Studentnr', 'Naam', 'Inchecktijd', 'Uitchecktijd', 'Reden', 'Status'], ...les.aanwezigheid.map((a) => [a.nr, a.naam, tm(a.in), tm(a.uit), a.reden || '', a.status])];
+  const csv = rows.map((r) => r.map((c) => '"' + String(c).replace(/"/g, '""') + '"').join(';')).join('\n');
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv' })); a.download = 'aanwezigheid.csv'; a.click();
+};
+
+async function loadRoster() {
+  const { roster } = await api('GET', '/api/roster');
+  $('roster').innerHTML = roster.length ? roster.map((r) => `<tr><td><input type="checkbox" data-nr="${esc(r.nr)}" ${r.inLes ? 'checked' : ''}></td><td>${esc(r.nr)}</td><td>${esc(r.naam)}</td><td>${r.toestel ? 'gekoppeld' : '<span class="mut">-</span>'}</td><td>${r.toestel ? `<button class="sec" data-rel="${esc(r.nr)}">Toestel vrijgeven</button>` : ''}</td></tr>`).join('') : '<tr><td colspan="5" class="mut">Nog geen klas.</td></tr>';
+}
+$('roster').onchange = async (e) => { const nr = e.target.dataset.nr; if (nr) { try { await api('POST', '/api/roster/present', { nr, inLes: e.target.checked }); showErr(''); } catch (er) { showErr(er.message); loadRoster(); } } };
+$('roster').onclick = async (e) => { const nr = e.target.dataset.rel; if (nr) { try { await api('POST', '/api/roster/release', { nr }); loadRoster(); } catch (er) { showErr(er.message); } } };
+
+function drawQr(code) {
+  const q = qrcode(0, 'M'); q.addData('focuson:' + code); q.make();
+  $('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+}
+
+function render() {
+  const active = les && les.actief;
+  $('startRow').classList.toggle('hide', !!active); $('live').classList.toggle('hide', !active);
+  if (active) {
+    $('code').textContent = les.code; $('sec').textContent = les.secondenTotWissel;
+    if (les.code !== lastCode) { lastCode = les.code; drawQr(les.code); }
+    $('lesInfo').textContent = les.klas + ' · gestart ' + tm(les.start);
+  } else lastCode = null;
+  $('att').innerHTML = les ? les.aanwezigheid.map((a) => `<tr><td>${esc(a.nr)}</td><td>${esc(a.naam)}</td><td>${tm(a.in)}</td><td>${tm(a.uit)}</td><td>${esc(a.reden)}</td><td>${tag(a.status)}</td></tr>`).join('') : '<tr><td colspan="6" class="mut">Geen les.</td></tr>';
+  $('log').innerHTML = les && les.meldingen.length ? les.meldingen.map((m) => `<div><span class="mut">${tm(m.t)}</span> ${esc(m.tekst)}</div>`).join('') : '<span class="mut">Nog geen meldingen.</span>';
+}
+
+async function refresh(withRoster) {
+  if (!token) return;
+  try {
+    const r = await api('GET', '/api/lessons/current'); les = r.les; render();
+    if (withRoster || Date.now() - lastRoster > 5000) { lastRoster = Date.now(); if (!document.activeElement || document.activeElement.type !== 'checkbox') loadRoster(); }
+  } catch (e) { /* tijdelijk geen verbinding */ }
+}
+setInterval(refresh, 1000);
+if (token) { setLoggedIn(true); refresh(true); }
+</script>
+</body>
+</html>

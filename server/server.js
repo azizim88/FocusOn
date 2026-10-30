@@ -1,5 +1,7 @@
 // FocusOn server (prototype). Geen externe afhankelijkheden. Gegevens staan alleen in het geheugen.
 const http = require('http');
+const fs = require('fs');
+const nodePath = require('path');
 const crypto = require('crypto');
 
 const PORT = process.env.PORT || 3000;
@@ -212,6 +214,15 @@ const routes = {
 const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') { res.writeHead(204, { 'Access-Control-Allow-Origin': '*', 'Access-Control-Allow-Headers': 'Content-Type, Authorization', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' }); return res.end(); }
   const path = req.url.split('?')[0];
+  if (req.method === 'GET' && !path.startsWith('/api/')) {
+    const file = path === '/' || path === '/docent' ? 'docent.html' : nodePath.basename(path);
+    const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8' };
+    try {
+      const data = fs.readFileSync(nodePath.join(__dirname, 'public', file));
+      res.writeHead(200, { 'Content-Type': types[nodePath.extname(file)] || 'application/octet-stream' });
+      return res.end(data);
+    } catch { /* val door naar 404 */ }
+  }
   const fn = routes[`${req.method} ${path}`];
   if (!fn) return send(res, 404, { error: 'Niet gevonden' });
   const body = req.method === 'POST' ? await readBody(req) : {};
