@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="nl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>FocusOn</title>
+<style>
+:root{--bg:#f4f6f9;--card:#fff;--tx:#1b2430;--mut:#6b7686;--pri:#2457d6;--ok:#1a8a4a;--warn:#c77a00;--bad:#c62828;--bd:#dde3ea}
+@media(prefers-color-scheme:dark){:root{--bg:#12161c;--card:#1b222b;--tx:#e8edf3;--mut:#93a0b0;--pri:#6c93ff;--ok:#4cc27f;--warn:#e8a63a;--bad:#ff6b6b;--bd:#2c3642}}
+*{box-sizing:border-box}
+body{margin:0;font:15px/1.45 system-ui,Segoe UI,sans-serif;background:var(--bg);color:var(--tx)}
+header{padding:14px 16px;border-bottom:1px solid var(--bd);background:var(--card);font-weight:700;display:flex;justify-content:space-between;align-items:center}
+main{display:grid;grid-template-columns:2fr 1fr;gap:16px;padding:16px;max-width:1150px;margin:auto}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:16px;margin-bottom:16px}
+h2{margin:0 0 12px;font-size:16px}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+input,select,textarea,button{font:inherit;padding:8px 10px;border-radius:8px;border:1px solid var(--bd);background:var(--card);color:var(--tx)}
+textarea{width:100%;min-height:80px;font-family:ui-monospace,monospace;font-size:13px}
+button{cursor:pointer;background:var(--pri);color:#fff;border-color:var(--pri)}
+button.sec{background:var(--card);color:var(--tx);border-color:var(--bd)}
+button.bad{background:var(--bad);border-color:var(--bad)}
+button:disabled{opacity:.45;cursor:default}
+.code{font-size:38px;font-weight:700;letter-spacing:6px;font-variant-numeric:tabular-nums}
+.mut{color:var(--mut);font-size:13px}
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:7px 6px;border-bottom:1px solid var(--bd);font-size:14px}
+.tag{padding:2px 8px;border-radius:99px;font-size:12px;font-weight:600}
+.t-ok{background:#1a8a4a22;color:var(--ok)}.t-warn{background:#c77a0022;color:var(--warn)}.t-bad{background:#c6282822;color:var(--bad)}.t-mut{background:var(--bd);color:var(--mut)}
+.phone{border:2px solid var(--bd);border-radius:18px;padding:14px;text-align:center;min-height:150px}
+.phone.lock{background:#10141b;color:#fff;border-color:#10141b}
+.log{max-height:170px;overflow:auto;font-size:13px}
+.log div{padding:3px 0;border-bottom:1px dashed var(--bd)}
+.note{font-size:12px;color:var(--mut);margin-top:8px}
+.hide{display:none}
+</style>
+</head>
+<body>
+<header><span>FocusOn <span class="mut" style="font-weight:400">prototype</span></span><span id="who" class="mut"></span></header>
+<main>
+<section>
+
+  <!-- DOCENT: login -->
+  <div class="card" id="loginCard">
+    <h2>Docent: inloggen of registreren</h2>
+    <div class="row">
+      <input id="em" type="email" placeholder="E-mail" value="docent@school.nl">
+      <input id="pw" type="password" placeholder="Wachtwoord" value="focuson">
+      <button id="login">Inloggen</button>
+      <button id="reg" class="sec">Registreren</button>
+    </div>
+    <div class="note">Prototype: accounts staan alleen in het geheugen. Later vervangen door Canvas (LTI 1.3 / OAuth2).</div>
+  </div>
+
+  <div id="app" class="hide">
+  <!-- KLAS -->
+  <div class="card">
+    <h2>1. Klas importeren (CSV: studentnummer;naam)</h2>
+    <textarea id="csvIn">1001;Anna de Vries
+1002;Bram Jansen
+1003;Chloë Bakker
+1004;Daan Smit
+1005;Emma Visser
+1006;Finn Meijer
+1007;Sanne de Boer
+1008;Lars Mulder
+1009;Noor Bos
+1010;Thijs Vos</textarea>
+    <div class="row" style="margin-top:8px">
+      <input type="file" id="csvFile" accept=".csv,.txt">
+      <button id="imp">Klas importeren</button>
+    </div>
+    <table style="margin-top:10px">
+      <thead><tr><th>Studentnr</th><th>Naam</th><th>Toestel</th><th></th></tr></thead>
+      <tbody id="roster"><tr><td colspan="4" class="mut">Nog geen klas geïmporteerd.</td></tr></tbody>
+    </table>
+    <div class="note">Zonder SSO logt de student in met het studentnummer en wordt het account aan het eerste toestel gebonden. De docent kan een toestel vrijgeven (bijvoorbeeld bij een nieuwe telefoon).</div>
+  </div>
+
+  <!-- LES -->
+  <div class="card">
+    <h2>2. Les</h2>
+    <div class="row">
+      <input id="klas" placeholder="Klas / vak" value="Netwerken 1A">
+      <select id="duur"><option value="45">45 min</option><option value="60">60 min</option><option value="90" selected>90 min</option></select>
+      <button id="start">Les starten</button>
+      <button id="stop" class="bad" disabled>Les beëindigen</button>
+    </div>
+    <div style="margin-top:14px">
+      <div class="row" style="margin-bottom:6px"><b style="font-size:14px">Wie zijn er in de les?</b>
+        <button class="sec" id="dAlle" style="padding:4px 8px">Alles</button>
+        <button class="sec" id="dGeen" style="padding:4px 8px">Niemand</button>
+        <span class="mut" id="dCount"></span></div>
+      <div id="deel" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:4px"><span class="mut">Importeer eerst een klas.</span></div>
+      <div class="note">Alleen aangevinkte studenten kunnen inchecken.</div>
+    </div>
+    <div style="margin-top:14px" id="info" class="mut">Nog geen actieve les.</div>
+    <div id="codebox" class="hide" style="margin-top:8px">
+      <div class="mut">Inchecken met code, wisselt elke 20 seconden (in de echte app: QR-code)</div>
+      <div class="code" id="code">------</div>
+      <div style="height:6px;background:var(--bd);border-radius:3px;margin:8px 0 4px;max-width:260px"><div id="bar" style="height:6px;background:var(--pri);border-radius:3px;width:100%;transition:width 1s linear"></div></div>
+      <div class="mut" id="rot"></div>
+      <div class="mut" id="timer"></div>
+    </div>
+  </div>
+
+  <!-- PRESENTIE -->
+  <div class="card">
+    <h2>3. Presentielijst</h2>
+    <div class="row" style="margin-bottom:10px">
+      <span class="mut">Tijdens de les zijn alle apps geblokkeerd behalve bellen (en 112).</span>
+      <button class="sec" id="csv" disabled>Exporteer CSV</button>
+    </div>
+    <table>
+      <thead><tr><th>Student</th><th>In</th><th>Uit</th><th>Reden</th><th>Status</th></tr></thead>
+      <tbody id="lijst"><tr><td colspan="5" class="mut">Start een les om de presentie te zien.</td></tr></tbody>
+    </table>
+  </div>
+  </div>
+</section>
+
+<aside>
+  <div class="card">
+    <h2>Student-telefoon (simulatie)</h2>
+    <div class="row" style="margin-bottom:10px"><label>Toestel <select id="dev"><option value="A">A</option><option value="B">B</option></select></label>
+      <span class="mut">elk account werkt op maar 1 toestel</span></div>
+    <div id="sLogin">
+      <div class="mut" style="margin-bottom:4px">Inloggen met schoolaccount (SSO, gesimuleerd)</div>
+      <div class="row" style="margin-bottom:12px"><select id="sso" style="flex:1;min-width:140px"></select><button id="ssoBtn">Inloggen met SSO</button></div>
+      <div class="mut" style="margin-bottom:4px">Of zonder SSO: inloggen met studentnummer</div>
+      <div class="row"><input id="snr" placeholder="Studentnr" style="width:130px"><button id="sbtn">Inloggen</button></div>
+    </div>
+    <div id="sMain" class="hide">
+      <div class="row" style="margin-bottom:10px">
+        <span id="sName" style="font-weight:600"></span>
+        <button class="sec" id="slogout">Uitloggen</button>
+      </div>
+      <div class="row" style="margin-bottom:10px">
+        <input id="sc" placeholder="Code" maxlength="6" style="width:110px">
+        <button id="checkin">Inchecken</button>
+      </div>
+      <div id="phone" class="phone"><div class="mut">Telefoon vrij</div></div>
+      <div class="row" style="margin-top:10px">
+        <button class="sec" id="revoke" disabled>Toestemming intrekken</button>
+        <button class="sec" id="noodbtn" disabled>Noodoproep 112</button>
+        <button class="sec" id="uitbtn" disabled>Uitchecken</button>
+      </div>
+    </div>
+    <div class="note">Alleen een ingelogde student kan inchecken, en elk account werkt op één toestel. Een doorgestuurde code werkt dus niet voor iemand anders. Bij SSO is geen koppelcode nodig.</div>
+  </div>
+  <div class="card">
+    <h2>Meldingen</h2>
+    <div class="log" id="log"><div class="mut">Geen meldingen.</div></div>
+  </div>
+</aside>
+</main>
+
+<script>
+const $=id=>document.getElementById(id);
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const fmt=d=>d.toLocaleTimeString('nl-NL',{hour:'2-digit',minute:'2-digit'});
+const ROT=20000;
+const accounts={'docent@school.nl':'focuson'};
+let docent=null, roster=[], les=null, rec=[], tick=null;
+var sessions={A:null,B:null}, dev='A';
+Object.defineProperty(window,'phoneUser',{get(){return sessions[dev]},set(v){sessions[dev]=v}});
+
+function log(t,cls){const l=$('log');if(l.firstChild&&l.firstChild.className==='mut')l.innerHTML='';const d=document.createElement('div');d.textContent=fmt(new Date())+' – '+t;if(cls)d.style.color=cls;l.prepend(d)}
+function newCode(n){return String(Math.floor(Math.pow(10,n-1)+Math.random()*9*Math.pow(10,n-1)))}
+
+/* ---------- Docent account ---------- */
+$('login').onclick=()=>{
+  const e=$('em').value.trim().toLowerCase(),p=$('pw').value;
+  if(accounts[e]!==undefined&&accounts[e]===p){docent=e;$('loginCard').classList.add('hide');$('app').classList.remove('hide');$('who').textContent=e;log('Docent ingelogd: '+e);if(!roster.length)$('imp').click()}
+  else alert('Onjuiste e-mail of wachtwoord.');
+};
+$('reg').onclick=()=>{
+  const e=$('em').value.trim().toLowerCase(),p=$('pw').value;
+  if(!/^\S+@\S+\.\S+$/.test(e)||p.length<4){alert('Geef een geldig e-mailadres en een wachtwoord van minstens 4 tekens.');return}
+  if(accounts[e]!==undefined){alert('Dit account bestaat al. Log in.');return}
+  accounts[e]=p;alert('Account aangemaakt. Je kunt nu inloggen.');
+};
+
+/* ---------- Klas importeren ---------- */
+$('csvFile').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('csvIn').value=r.result};r.readAsText(f)};
+$('imp').onclick=()=>{
+  if(les){alert('Importeren kan niet tijdens een actieve les.');return}
+  const out=[];const seen=new Set();let bad=0;
+  $('csvIn').value.split(/\r?\n/).forEach(line=>{
+    line=line.trim();if(!line)return;
+    const parts=line.split(/[;,\t]/).map(x=>x.trim());
+    if(parts.length<2||!parts[0]||!parts[1]||seen.has(parts[0])){bad++;return}
+    if(/^(studentnummer|nr|id)$/i.test(parts[0]))return;
+    seen.add(parts[0]);const old=roster.find(x=>x.nr===parts[0]);out.push({nr:parts[0],naam:parts.slice(1).join(' '),toestel:old?old.toestel:null,inLes:old?old.inLes:true});
+  });
+  roster=out;Object.keys(sessions).forEach(k=>{sessions[k]=sessions[k]?(roster.find(x=>x.nr===sessions[k].nr)||null):null});showPhoneState();renderRoster();renderDeel();
+  log('Klas geïmporteerd: '+roster.length+' studenten'+(bad?', '+bad+' regel(s) overgeslagen':''),bad?'var(--warn)':null);
+};
+function fillSso(){
+  const o=$('sso');const v=o.value;
+  o.innerHTML=roster.map(r=>'<option value="'+esc(r.nr)+'">'+esc(r.naam)+'</option>').join('')||'<option value="">(geen klas)</option>';
+  if(v)o.value=v;
+}
+function renderRoster(){
+  fillSso();
+  const tb=$('roster');
+  if(!roster.length){tb.innerHTML='<tr><td colspan="4" class="mut">Nog geen klas geïmporteerd.</td></tr>';return}
+  tb.innerHTML='';
+  roster.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+esc(r.nr)+'</td><td>'+esc(r.naam)+'</td><td><span class="tag '+(r.toestel?'t-ok':'t-mut')+'">'+(r.toestel?'Toestel '+r.toestel:'Geen')+'</span></td><td></td>';
+    if(r.toestel){
+      const b=document.createElement('button');b.className='sec';b.style.padding='3px 8px';b.textContent='Toestel vrijgeven';
+      b.onclick=()=>{
+        r.toestel=null;Object.keys(sessions).forEach(k=>{if(sessions[k]&&sessions[k].nr===r.nr)sessions[k]=null});
+        log('Toestel vrijgegeven voor '+r.naam);renderRoster();showPhoneState();
+      };
+      tr.lastChild.appendChild(b);
+    }
+    tb.appendChild(tr);
+  });
+}
+
+/* ---------- Deelnemers ---------- */
+function renderDeel(){
+  const d=$('deel');
+  if(!roster.length){d.innerHTML='<span class="mut">Importeer eerst een klas.</span>';$('dCount').textContent='';return}
+  d.innerHTML='';
+  roster.forEach(s=>{
+    const r=les&&recOf(s);const vast=!!(r&&r.tijd&&!r.uit);
+    const l=document.createElement('label');l.style.cssText='display:flex;gap:6px;align-items:center;font-size:14px';
+    const b=document.createElement('input');b.type='checkbox';b.checked=s.inLes;b.disabled=vast;
+    b.onchange=()=>{s.inLes=b.checked;log(s.naam+(s.inLes?' staat in de les':' is uit de les gehaald'));renderDeel();render()};
+    l.appendChild(b);l.appendChild(document.createTextNode(s.nr+' '+s.naam));d.appendChild(l);
+  });
+  $('dCount').textContent=roster.filter(s=>s.inLes).length+' van '+roster.length+' aangevinkt';
+}
+$('dAlle').onclick=()=>{roster.forEach(s=>{const r=les&&recOf(s);if(!(r&&r.tijd&&!r.uit))s.inLes=true});renderDeel();render()};
+$('dGeen').onclick=()=>{roster.forEach(s=>{const r=les&&recOf(s);if(!(r&&r.tijd&&!r.uit))s.inLes=false});renderDeel();render()};
+
+/* ---------- Student koppelen ---------- */
+function loginAs(r,via){
+  if(!r){alert('Studentnummer staat niet in de klas.');return}
+  if(phoneUser){alert('Er is al iemand ingelogd op dit toestel.');return}
+  if(r.toestel&&r.toestel!==dev){
+    log(r.naam+': inloggen geweigerd, account is al gekoppeld aan toestel '+r.toestel,'var(--bad)');
+    alert('Dit account is al in gebruik op toestel '+r.toestel+'. Vraag de docent het toestel vrij te geven.');return;
+  }
+  r.toestel=dev;phoneUser=r;renderRoster();showPhoneState();
+  log(r.naam+' ingelogd op toestel '+dev+' ('+via+')');
+}
+$('ssoBtn').onclick=()=>loginAs(roster.find(x=>x.nr===$('sso').value),'SSO');
+$('sbtn').onclick=()=>{const nr=$('snr').value.trim();loginAs(roster.find(x=>x.nr===nr),'studentnummer');$('snr').value=''};
+$('dev').onchange=e=>{dev=e.target.value;showPhoneState()};
+$('slogout').onclick=()=>{
+  if(!phoneUser)return;
+  const r=recOf(phoneUser);
+  if(les&&r&&r.tijd&&!r.uit){alert('Uitloggen kan niet tijdens de les.');return}
+  phoneUser=null;showPhoneState();
+};
+function showPhoneState(){
+  $('sLogin').classList.toggle('hide',!!phoneUser);
+  $('sMain').classList.toggle('hide',!phoneUser);
+  if(phoneUser)$('sName').textContent=phoneUser.naam;
+  phone();
+}
+const recOf=s=>rec.find(r=>r.nr===s.nr);
+
+/* ---------- Les ---------- */
+$('start').onclick=()=>{
+  if(!roster.length){alert('Importeer eerst een klas.');return}
+  if(!roster.some(s=>s.inLes)){alert('Vink minstens één student aan die in de les is.');return}
+  les={klas:$('klas').value||'Les',start:new Date(),duur:+$('duur').value,code:newCode(6),prev:null,codeAt:Date.now(),};
+  rec=roster.map(s=>({nr:s.nr,naam:s.naam,tijd:null,uit:null,reden:null,status:'Afwezig',bel:false}));
+  $('start').disabled=true;$('stop').disabled=false;$('csv').disabled=false;
+  $('info').textContent=les.klas+' – gestart '+fmt(les.start)+', duur '+les.duur+' min';
+  $('codebox').classList.remove('hide');$('code').textContent=les.code;
+  log('Les gestart: '+les.klas);
+  clearInterval(tick);tick=setInterval(timer,1000);timer();render();renderDeel();phone();
+};
+$('stop').onclick=()=>{
+  if(!les)return;
+  rec.forEach(r=>{
+    if(r.tijd&&!r.uit){r.uit=new Date();r.reden='Einde les';log(r.naam+' uitgecheckt '+fmt(r.uit)+' (einde les)')}
+    if(r.tijd&&r.status!=='Omzeild')r.status='Uitgecheckt';
+  });
+  log('Les beëindigd, alle telefoons ontgrendeld');
+  clearInterval(tick);les=null;
+  $('start').disabled=false;$('stop').disabled=true;
+  $('codebox').classList.add('hide');$('info').textContent='Les beëindigd. Presentielijst blijft zichtbaar.';
+  render();renderDeel();phone();
+};
+function timer(){
+  if(!les)return;
+  if(Date.now()-les.codeAt>=ROT){les.prev=les.code;les.code=newCode(6);les.codeAt=Date.now();$('code').textContent=les.code}
+  const left=Math.max(0,ROT-(Date.now()-les.codeAt));
+  $('bar').style.width=(left/ROT*100)+'%';$('rot').textContent='Code wisselt over '+Math.ceil(left/1000)+' s';
+  const rest=les.duur*60-Math.floor((Date.now()-les.start)/1000);
+  if(rest<=0){$('timer').textContent='Lesduur voorbij';$('stop').click();return}
+  $('timer').textContent='Nog '+Math.floor(rest/60)+':'+String(rest%60).padStart(2,'0')+' tot einde les';
+}
+
+/* ---------- Student acties ---------- */
+$('checkin').onclick=()=>{
+  if(!phoneUser)return;
+  if(!les){alert('Er is geen actieve les.');return}
+  const c=$('sc').value.trim();
+  const geldig=c===les.code||(c===les.prev&&Date.now()-les.codeAt<3000);
+  if(!geldig){log(c===les.prev?'Verlopen code gebruikt door '+phoneUser.naam:'Ongeldige code door '+phoneUser.naam,'var(--bad)');return}
+  const r=recOf(phoneUser);
+  if(!phoneUser.inLes){log(phoneUser.naam+' probeerde in te checken maar staat niet in de les','var(--bad)');alert('Je staat niet op de lijst voor deze les. Vraag de docent.');return}
+  if(r.tijd&&!r.uit){alert('Je bent al ingecheckt.');return}
+  const laat=(Date.now()-les.start)>10*60*1000;
+  r.tijd=r.tijd||new Date();r.uit=null;r.reden=null;r.status=laat?'Te laat':'Aanwezig';
+  $('sc').value='';log(r.naam+' ingecheckt, apps geblokkeerd');render();renderDeel();phone();
+};
+$('revoke').onclick=()=>{
+  const r=phoneUser&&recOf(phoneUser);if(!r||!les)return;
+  r.status='Omzeild';r.uit=new Date();r.reden='Blokkade omzeild';
+  log('ALERT: '+r.naam+' heeft de blokkade omzeild','var(--bad)');render();phone();
+};
+$('uitbtn').onclick=()=>{
+  const r=phoneUser&&recOf(phoneUser);if(!r||!les||r.uit)return;
+  r.uit=new Date();r.reden='Zelf uitgecheckt';r.status='Uitgecheckt';
+  log(r.naam+' uitgecheckt '+fmt(r.uit)+' (zelf)');render();phone();
+};
+$('noodbtn').onclick=()=>alert('Noodoproep naar 112 wordt gestart (altijd toegestaan).');
+
+function phone(){
+  const p=$('phone'),rv=$('revoke'),nb=$('noodbtn'),ub=$('uitbtn');
+  const off=()=>{rv.disabled=nb.disabled=ub.disabled=true};
+  if(!phoneUser){return}
+  const r=recOf(phoneUser);
+  if(!r||!r.tijd){p.className='phone';p.innerHTML='<div class="mut">Telefoon vrij</div>';off();return}
+  if(!les||r.status==='Uitgecheckt'){p.className='phone';p.innerHTML='<div class="mut">Les afgelopen, telefoon vrij</div>';off();return}
+  if(r.status==='Omzeild'){p.className='phone';p.innerHTML='<div style="color:var(--bad);font-weight:600">Blokkade opgeheven</div><div class="mut">Docent is gewaarschuwd.</div>';off();return}
+  p.className='phone lock';
+  p.innerHTML='<div style="font-size:30px">🔒</div><div style="font-weight:600">'+esc(les.klas)+'</div><div style="opacity:.8;font-size:13px">Alle apps geblokkeerd</div>'+
+    '<div style="margin-top:10px;font-size:13px">📞 Bellen toegestaan</div>';
+  rv.disabled=false;nb.disabled=false;ub.disabled=false;
+}
+
+/* ---------- Presentielijst ---------- */
+function render(){
+  const tb=$('lijst');
+  if(!rec.length){tb.innerHTML='<tr><td colspan="5" class="mut">Start een les om de presentie te zien.</td></tr>';return}
+  tb.innerHTML='';
+  rec.forEach(r=>{
+    const ro=roster.find(x=>x.nr===r.nr);const niet=ro&&!ro.inLes&&!r.tijd;
+    const cls={Aanwezig:'t-ok','Te laat':'t-warn',Omzeild:'t-bad',Uitgecheckt:'t-mut',Afwezig:'t-bad'}[r.status];
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+esc(r.naam)+'</td><td>'+(r.tijd?fmt(r.tijd):'–')+'</td><td>'+(r.uit?fmt(r.uit):'–')+'</td><td>'+(r.reden||'–')+'</td><td><span class="tag '+(niet?'t-mut':cls)+'">'+(niet?'Niet in les':r.status)+'</span></td>';
+    tb.appendChild(tr);
+  });
+}
+$('csv').onclick=()=>{
+  const rows=[['Studentnummer','Student','Inchecktijd','Uitchecktijd','Reden','Status']].concat(rec.map(r=>[r.nr,r.naam,r.tijd?fmt(r.tijd):'',r.uit?fmt(r.uit):'',r.reden||'',r.status]));
+  const blob=new Blob([rows.map(r=>r.join(';')).join('\n')],{type:'text/csv'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='presentie.csv';a.click();
+};
+</script>
+</body>
+</html>

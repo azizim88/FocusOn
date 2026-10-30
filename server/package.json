@@ -1,0 +1,8 @@
+{
+  "name": "focuson-server",
+  "version": "0.1.0",
+  "description": "FocusOn server (prototype, in-memory, geen afhankelijkheden)",
+  "main": "server.js",
+  "scripts": { "start": "node server.js", "test": "node test.js" },
+  "license": "UNLICENSED"
+}

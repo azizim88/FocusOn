@@ -1,0 +1,32 @@
+# XcodeGen-specificatie. Maak het Xcode-project met:  brew install xcodegen && xcodegen
+name: FocusOn
+options:
+  bundleIdPrefix: nl.focuson
+  deploymentTarget:
+    iOS: "16.0"
+targets:
+  FocusOn:
+    type: application
+    platform: iOS
+    sources:
+      - FocusOn
+    info:
+      path: Config/Info.plist
+      properties:
+        CFBundleDisplayName: FocusOn
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSCameraUsageDescription: FocusOn gebruikt de camera om de QR-code van de docent te scannen.
+        NSAppTransportSecurity:            # alleen voor testen met http; verwijderen in productie
+          NSAllowsArbitraryLoads: true
+    entitlements:
+      path: Config/FocusOn.entitlements
+      properties:
+        com.apple.developer.family-controls: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: nl.focuson.app
+        SWIFT_VERSION: "5.0"
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        # DEVELOPMENT_TEAM: VUL_HIER_JE_TEAM_ID_IN   (of kies het team in Xcode > Signing)
