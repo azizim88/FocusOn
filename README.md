@@ -27,3 +27,8 @@ App voor scholen: studenten checken in bij de les, afleidende apps worden geblok
 1. Maak een GitHub-repository en push deze map (de map `.github/` moet in de root staan).
 2. Tab **Actions**: "Android APK" levert na een run de debug-APK onder *Artifacts* (`FocusOn-debug-apk`). Installeer die op een Samsung (onbekende bronnen toestaan).
 3. "iOS build" controleert alleen of de app compileert. Een installeerbare iPhone-app vereist Apple-certificaten en het Family Controls-entitlement.
+
+## Prototype online zetten en releasen
+**Prototype (GitHub Pages):** Repository > Settings > Pages > Source: *GitHub Actions*. Daarna publiceert elke push naar `main` (of Actions > "Prototype publiceren" > Run workflow) het prototype op `https://<gebruiker>.github.io/<repo>/`.
+
+**Release:** maak een tag `v0.1.0` (Releases > Draft a new release > Publish). De workflow "Release" bouwt de Android-APK en voegt die plus het prototype (zip) toe aan de release. De APK is een debug-APK; voor Play Store is een ondertekende release-build nodig.
